@@ -26,6 +26,26 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const allBooksCollection = client.db('scholarNet').collection('allBooks')
+
+    // add from all books form 
+    app.post('/allBooks', async(req, res)=>{
+        const newBooks = req.body;
+        const result = await allBooksCollection.insertOne(newBooks);
+        res.send(result)
+    })
+    
+    // finding the all Books
+    app.get('/allBooks', async(req, res) =>{
+        const books = await allBooksCollection.find().toArray();
+        res.send(books)
+    })
+
+
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
