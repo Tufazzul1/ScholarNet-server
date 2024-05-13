@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -36,20 +36,26 @@ async function run() {
         const result = await allBooksCollection.insertOne(newBooks);
         res.send(result)
     })
-
     // finding the all Books
     app.get('/allBooks', async(req, res) =>{
         const books = await allBooksCollection.find().toArray();
         res.send(books)
     })
-
+    // finding all category
     app.get('/categories', async(req, res) =>{
         const books = await categoryCollection.find().toArray();    
         res.send(books)
     })
+    // finding single category
     app.get('/categories/:category', async(req, res) =>{
         const books = await categoryCollection.find().toArray();    
         res.send(books)
+    })
+    // Book details
+    app.get('/allBooks/:id', async (req, res) => {
+        const id = req.params.id;
+        const result = await allBooksCollection.findOne({ _id: new ObjectId(id) })
+        res.send(result)
     })
 
 
