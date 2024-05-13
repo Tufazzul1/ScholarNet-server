@@ -27,7 +27,8 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
 
-    const allBooksCollection = client.db('scholarNet').collection('allBooks')
+    const allBooksCollection = client.db('scholarNet').collection('allBooks');
+    const categoryCollection = client.db('scholarNet').collection('category');
 
     // add from all books form 
     app.post('/allBooks', async(req, res)=>{
@@ -35,10 +36,19 @@ async function run() {
         const result = await allBooksCollection.insertOne(newBooks);
         res.send(result)
     })
-    
+
     // finding the all Books
     app.get('/allBooks', async(req, res) =>{
         const books = await allBooksCollection.find().toArray();
+        res.send(books)
+    })
+
+    app.get('/categories', async(req, res) =>{
+        const books = await categoryCollection.find().toArray();    
+        res.send(books)
+    })
+    app.get('/categories/:category', async(req, res) =>{
+        const books = await categoryCollection.find().toArray();    
         res.send(books)
     })
 
