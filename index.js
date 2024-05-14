@@ -29,6 +29,7 @@ async function run() {
 
     const allBooksCollection = client.db('scholarNet').collection('allBooks');
     const categoryCollection = client.db('scholarNet').collection('category');
+    const borrowCollection = client.db('scholarNet').collection('borrow');
 
     // add from all books form 
     app.post('/allBooks', async(req, res)=>{
@@ -56,6 +57,17 @@ async function run() {
         const id = req.params.id;
         const result = await allBooksCollection.findOne({ _id: new ObjectId(id) })
         res.send(result)
+    })
+    // borrow books
+    app.post('/borrow', async(req, res)=>{
+        const newBooks = req.body;
+        const result = await borrowCollection.insertOne(newBooks);
+        res.send(result)
+    })
+    // finding borrow books
+    app.get('/borrow', async(req, res) =>{
+        const books = await borrowCollection.find().toArray();
+        res.send(books)
     })
 
 
