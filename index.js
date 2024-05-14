@@ -66,8 +66,18 @@ async function run() {
     })
     // finding borrow books
     app.get('/borrow', async(req, res) =>{
-        const books = await borrowCollection.find().toArray();
+        console.log(req.query?.email)
+        let query = {};
+        if(req.query?.email){
+            query= {email: req.query?.email}
+        }
+        const books = await borrowCollection.find(query).toArray();
         res.send(books)
+    })
+    // update Book
+    app.patch('/allBooks/:id', async(req, res)=>{
+        const updateBook = req.body;
+        console.log(updateBook)
     })
     // return borrow
     app.delete('/borrow/:id', async(req, res) =>{
