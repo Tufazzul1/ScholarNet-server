@@ -7,7 +7,11 @@ const port = process.env.PORT || 5000;
 
 
 // middleware
-app.use(cors());
+app.use(cors({
+    origin: ["https://scholarnet-2fc12.web.app",
+        "https://scholarnet-2fc12.firebaseapp.com",
+        "http://localhost:5173"]
+}));
 app.use(express.json());
 
 
@@ -25,7 +29,7 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const allBooksCollection = client.db('scholarNet').collection('allBooks');
         const categoryCollection = client.db('scholarNet').collection('category');
@@ -66,7 +70,7 @@ async function run() {
         })
         // finding borrow books
         app.get('/borrow', async (req, res) => {
-            console.log(req.query?.email)
+            // console.log(req.query?.email)
             let query = {};
             if (req.query?.email) {
                 query = { email: req.query?.email }
@@ -84,13 +88,13 @@ async function run() {
                 $set: {
                     name: updatedBook.name,
                     category: updatedBook.category,
-                    photo: updatedBook.photo,
+                    image: updatedBook.image,
                     rating: updatedBook.rating,
                     author: updatedBook.author
                 }
             }
             const result = await allBooksCollection.updateOne(filter, book, options)
-            res.send(result)    
+            res.send(result)
 
         })
         // return borrow
@@ -102,7 +106,7 @@ async function run() {
         })
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
