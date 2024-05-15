@@ -29,6 +29,25 @@ const client = new MongoClient(uri, {
         deprecationErrors: true,
     }
 });
+const logger = (req, res, next) => {
+    console.log("logged info :", req.method, req.url);
+    next();
+};
+
+// const verifyToken = (req, res, next) => {
+//     const token = req?.cookies?.token;
+//     // console.log('token in the midleware', token);
+//     if (!token) {
+//         return res.status(401).send({ message: 'unauthorized access' })
+//     }
+//     jwt.verify(token, process.env.ACCCESS_TOKEN_SECRET, (err, decoded) => {
+//         if (err) {
+//             return res.status(401).send({ message: 'unauthorize access' })
+//         }
+//         req.user = decoded;
+//         next()
+//     })
+// }
 
 async function run() {
     try {
@@ -44,7 +63,7 @@ async function run() {
         // auth related api****
         app.post('/jwt', async (req, res) => {
             const user = req.body;
-            console.log("user for token", user)
+            // console.log("user for token", user)
             const token = jwt.sign(user, process.env.ACCCESS_TOKEN_SECRET, { expiresIn: '1h' })
             res.cookie('token', token, {
                 httpOnly: true,
@@ -55,7 +74,7 @@ async function run() {
         })
         app.post('/logout', async (req, res) => {
             const user = req.body;
-            console.log('logging out user', user)
+            // console.log('logging out user', user)
             res.clearCookie('token', { maxAge: 0 })
                 .send({ seccess: true })
         })
@@ -64,7 +83,7 @@ async function run() {
 
         // Book related api *****
 
-        // add from all books form 
+        // add into all books form add books
         app.post('/allBooks', async (req, res) => {
             const newBooks = req.body;
             const { quantity, ...rest } = newBooks
@@ -74,23 +93,28 @@ async function run() {
             res.send(result)
         })
         // finding the all Books
-        app.get('/allBooks', async (req, res) => {
-            console.log("req cookies", req.cookies)
+        app.get('/allBooks', logger, async (req, res) => {
+            // console.log("req cookies info :", req.user);
+            // console.log("req user info :", req.query.user); 
+            // if (req?.user?.email !== req?.query?.user) {
+            //     return res.status(403).send({ message: "Forbidden access" }); 
+            // }
             const books = await allBooksCollection.find().toArray();
-            res.send(books)
-        })
+            res.send(books);
+        });
+        
         // finding all category
         app.get('/categories', async (req, res) => {
             const books = await categoryCollection.find().toArray();
             res.send(books)
         })
         // finding best selling books
-        app.get('/selling', async(req, res) =>{
+        app.get('/selling', async (req, res) => {
             const books = await bestSellingCollection.find().toArray();
             res.send(books)
         })
         // finding best writter books
-        app.get('/popular', async(req, res) =>{
+        app.get('/popular', async (req, res) => {
             const books = await bestWritterCollection.find().toArray();
             res.send(books)
         })
@@ -128,7 +152,6 @@ async function run() {
                 res.status(400).send({ error: 'Book out of stock' });
             }
         });
-
 
         // finding borrow books
         app.get('/borrow', async (req, res) => {
