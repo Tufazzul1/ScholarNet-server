@@ -116,12 +116,24 @@ async function run() {
             res.send(result)
 
         })
-        // return borrow
+        // return Book
         app.delete('/borrow/:id', async (req, res) => {
             const id = req.params.id;
-            const filter = { _id: new ObjectId(id) };
-            const result = await borrowCollection.deleteOne(filter);
-            res.send(result)
+            const borrowedBooks = await borrowCollection.findOne({ _id: new ObjectId(id) })
+            if (borrowedBooks) {
+                const bookId = borrowedBooks.bookId;
+                const deleteResult = await borrowCollection.deleteOne({ _id: new ObjectId(id) });
+        
+                const updateResult = await allBooksCollection.updateOne(
+                    { _id: new ObjectId(bookId) },
+                    { $inc: { quantity: 1 } }
+                );
+        
+                res.send({ deleteResult, updateResult });
+            }
+         else {
+            res.status(404).send({ error: 'Borrow record not found' });
+        }
         })
 
         // Send a ping to confirm a successful connection
