@@ -49,10 +49,16 @@ const logger = (req, res, next) => {
 //     })
 // }
 
+const cookieOptions = {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production" ? true : false,
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict"
+}
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const allBooksCollection = client.db('scholarNet').collection('allBooks');
         const categoryCollection = client.db('scholarNet').collection('category');
@@ -65,17 +71,13 @@ async function run() {
             const user = req.body;
             // console.log("user for token", user)
             const token = jwt.sign(user, process.env.ACCCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: false,
-                sameSite: 'strict'
-            })
+            res.cookie('token', token, cookieOptions)
                 .send({ success: true })
         })
         app.post('/logout', async (req, res) => {
             const user = req.body;
             // console.log('logging out user', user)
-            res.clearCookie('token', { maxAge: 0 })
+            res.clearCookie('token', { ...cookieOptions , maxAge: 0 })
                 .send({ seccess: true })
         })
 
@@ -203,8 +205,8 @@ async function run() {
         })
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
-        console.log("Pinged your deployment. You successfully connected to MongoDB!");
+        // await client.db("admin").command({ ping: 1 });
+        // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
         // await client.close();
