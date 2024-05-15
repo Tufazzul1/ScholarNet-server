@@ -16,6 +16,7 @@ app.use(cors({
     ], credentials: true
 }));
 app.use(express.json());
+app.use(cookieParser())
 
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.6qre6yi.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -32,13 +33,15 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        // await client.connect();
+        await client.connect();
 
         const allBooksCollection = client.db('scholarNet').collection('allBooks');
         const categoryCollection = client.db('scholarNet').collection('category');
         const borrowCollection = client.db('scholarNet').collection('borrow');
+        const bestSellingCollection = client.db('scholarNet').collection('bestselling');
+        const bestWritterCollection = client.db('scholarNet').collection('popularwritter');
 
-        // auth related api
+        // auth related api****
         app.post('/jwt', async (req, res) => {
             const user = req.body;
             console.log("user for token", user)
@@ -46,7 +49,7 @@ async function run() {
             res.cookie('token', token, {
                 httpOnly: true,
                 secure: false,
-                sameSite: 'none'
+                sameSite: 'strict'
             })
                 .send({ success: true })
         })
@@ -59,7 +62,7 @@ async function run() {
 
 
 
-        // Book related api 
+        // Book related api *****
 
         // add from all books form 
         app.post('/allBooks', async (req, res) => {
@@ -72,12 +75,23 @@ async function run() {
         })
         // finding the all Books
         app.get('/allBooks', async (req, res) => {
+            console.log("req cookies", req.cookies)
             const books = await allBooksCollection.find().toArray();
             res.send(books)
         })
         // finding all category
         app.get('/categories', async (req, res) => {
             const books = await categoryCollection.find().toArray();
+            res.send(books)
+        })
+        // finding best selling books
+        app.get('/selling', async(req, res) =>{
+            const books = await bestSellingCollection.find().toArray();
+            res.send(books)
+        })
+        // finding best writter books
+        app.get('/popular', async(req, res) =>{
+            const books = await bestWritterCollection.find().toArray();
             res.send(books)
         })
         // finding single category
@@ -166,7 +180,7 @@ async function run() {
         })
 
         // Send a ping to confirm a successful connection
-        // await client.db("admin").command({ ping: 1 });
+        await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
