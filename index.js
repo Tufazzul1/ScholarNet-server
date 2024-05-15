@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config()
+const jwt = require('jsonwebtoken')
+const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
@@ -8,9 +10,10 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors({
-    origin: ["https://scholarnet-2fc12.web.app",
-        "https://scholarnet-2fc12.firebaseapp.com",
-        "http://localhost:5173"]
+    origin: ["http://localhost:5173",
+        "https://scholarnet-2fc12.web.app",
+        "https://scholarnet-2fc12.firebaseapp.com"
+    ], credentials: true
 }));
 app.use(express.json());
 
@@ -29,16 +32,42 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
-        await client.connect();
+        // await client.connect();
 
         const allBooksCollection = client.db('scholarNet').collection('allBooks');
         const categoryCollection = client.db('scholarNet').collection('category');
         const borrowCollection = client.db('scholarNet').collection('borrow');
 
+        // auth related api
+        app.post('/jwt', async (req, res) => {
+            const user = req.body;
+            console.log("user for token", user)
+            const token = jwt.sign(user, process.env.ACCCESS_TOKEN_SECRET, { expiresIn: '1h' })
+            res.cookie('token', token, {
+                httpOnly: true,
+                secure: false,
+                sameSite: 'none'
+            })
+                .send({ success: true })
+        })
+        app.post('/logout', async (req, res) => {
+            const user = req.body;
+            console.log('logging out user', user)
+            res.clearCookie('token', { maxAge: 0 })
+                .send({ seccess: true })
+        })
+
+
+
+        // Book related api 
+
         // add from all books form 
         app.post('/allBooks', async (req, res) => {
             const newBooks = req.body;
-            const result = await allBooksCollection.insertOne(newBooks);
+            const { quantity, ...rest } = newBooks
+            const result = await allBooksCollection.insertOne({
+                ...rest, quantity: parseInt(quantity)
+            });
             res.send(result)
         })
         // finding the all Books
@@ -71,9 +100,9 @@ async function run() {
         app.post('/borrow', async (req, res) => {
             const newBorrow = req.body;
             const bookId = newBorrow.bookId;
-        
+
             const book = await allBooksCollection.findOne({ _id: new ObjectId(bookId) });
-        
+
             if (book.quantity > 0) {
                 const borrowResult = await borrowCollection.insertOne(newBorrow);
                 const updateResult = await allBooksCollection.updateOne(
@@ -85,8 +114,8 @@ async function run() {
                 res.status(400).send({ error: 'Book out of stock' });
             }
         });
-        
-        
+
+
         // finding borrow books
         app.get('/borrow', async (req, res) => {
             // console.log(req.query?.email)
@@ -123,21 +152,21 @@ async function run() {
             if (borrowedBooks) {
                 const bookId = borrowedBooks.bookId;
                 const deleteResult = await borrowCollection.deleteOne({ _id: new ObjectId(id) });
-        
+
                 const updateResult = await allBooksCollection.updateOne(
                     { _id: new ObjectId(bookId) },
                     { $inc: { quantity: 1 } }
                 );
-        
+
                 res.send({ deleteResult, updateResult });
             }
-         else {
-            res.status(404).send({ error: 'Borrow record not found' });
-        }
+            else {
+                res.status(404).send({ error: 'Borrow record not found' });
+            }
         })
 
         // Send a ping to confirm a successful connection
-        await client.db("admin").command({ ping: 1 });
+        // await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
         // Ensures that the client will close when you finish/error
